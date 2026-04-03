@@ -18,11 +18,12 @@
   "author": "Brain Byte",
   "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "axios": "^1.14.0",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.4.0",
-    "nodemon": "^3.1.0"
+    "mongoose": "^8.23.0",
+    "nodemon": "^3.1.14"
   }
 }
