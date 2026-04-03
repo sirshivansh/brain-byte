@@ -6,6 +6,7 @@ from explanation import generate_explanation, suggest_action
 from data_loader import load_logs
 from timeline import correlate_logs
 from explanation import calculate_risk
+from timeline import detect_suspicious_ip
 app = Flask(__name__)
 
 @app.route("/ask", methods=["POST"])
@@ -27,6 +28,8 @@ def ask():
 
     # Take first attack scenario
         logs = list(grouped_logs.values())[0]
+
+        suspicious_ip = detect_suspicious_ip(logs)
 
         # Timeline
         timeline = build_timeline(logs)
@@ -51,6 +54,7 @@ def ask():
     "explanation": explanation,
     "actions": actions,
     "risk_score": risk_score,
+    "suspicious_ip": suspicious_ip,
     "risk_level": risk_level
 })
 

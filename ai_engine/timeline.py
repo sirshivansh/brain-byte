@@ -5,12 +5,13 @@ def build_timeline(logs):
 
     for i, log in enumerate(logs):
         event = {
-            "step": i + 1,
-            "time": log["timestamp"],
-            "event": log["event_type"],
-            "status": log.get("status", ""),
-            "description": ""
-        }
+    "step": i + 1,
+    "time": log["timestamp"],
+    "event": log["event_type"],
+    "status": log.get("status", ""),
+    "technique": log.get("technique", "Unknown"),
+    "description": ""
+}
 
         if log["event_type"] == "login" and log.get("status") == "failed":
             event["description"] = "Failed login attempt detected"
@@ -51,3 +52,26 @@ def correlate_logs(logs):
         grouped[key].append(log)
 
     return grouped
+def detect_suspicious_ip(logs):
+    ip_count = {}
+
+    for log in logs:
+        ip = log.get("ip")
+        if not ip:
+            continue
+
+        if ip not in ip_count:
+            ip_count[ip] = 0
+
+        ip_count[ip] += 1
+
+    # Find IP with highest activity
+    suspicious_ip = None
+    max_count = 0
+
+    for ip, count in ip_count.items():
+        if count > max_count and count >= 2:
+            suspicious_ip = ip
+            max_count = count
+
+    return suspicious_ip
