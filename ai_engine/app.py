@@ -5,6 +5,7 @@ from timeline import build_timeline, detect_attack
 from explanation import generate_explanation, suggest_action
 from data_loader import load_logs
 from timeline import correlate_logs
+from explanation import calculate_risk
 app = Flask(__name__)
 
 @app.route("/ask", methods=["POST"])
@@ -29,6 +30,7 @@ def ask():
 
         # Timeline
         timeline = build_timeline(logs)
+        risk_score, risk_level = calculate_risk(parsed, timeline)
 
         # Attack detection
         attack = detect_attack(timeline)
@@ -40,15 +42,17 @@ def ask():
         actions = suggest_action(parsed)
 
         return jsonify({
-            "status": "success",
-            "user_query": user_query,
-            "parsed": parsed,
-            "mongo_query": str(mongo_query),
-            "timeline": timeline,
-            "attack_analysis": attack,
-            "explanation": explanation,
-            "actions": actions
-        })
+    "status": "success",
+    "user_query": user_query,
+    "parsed": parsed,
+    "mongo_query": str(mongo_query),
+    "timeline": timeline,
+    "attack_analysis": attack,
+    "explanation": explanation,
+    "actions": actions,
+    "risk_score": risk_score,
+    "risk_level": risk_level
+})
 
     except Exception as e:
         return jsonify({
