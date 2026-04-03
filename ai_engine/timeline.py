@@ -37,3 +37,17 @@ def detect_attack(timeline):
         return "Multiple login attempts detected. Possible brute-force attack."
 
     return "No clear attack pattern detected."
+
+def correlate_logs(logs):
+    # Group by IP
+    grouped = {}
+
+    for log in logs:
+        key = log.get("ip") or log.get("user")
+
+        if key not in grouped:
+            grouped[key] = []
+
+        grouped[key].append(log)
+
+    return grouped
