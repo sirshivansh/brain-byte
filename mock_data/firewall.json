@@ -3,6 +3,7 @@
     "timestamp": 0,
     "event_type": "port_scan",
     "ip": "192.168.1.10",
-    "location": "India"
+    "location": "India",
+    "technique": "Network Scanning (T1046)"
   }
 ]
