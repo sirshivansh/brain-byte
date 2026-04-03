@@ -1,0 +1,14 @@
+[
+  {
+    "source": "Firewall",
+    "event": "Port Scan Detected",
+    "severity": "Medium",
+    "timestamp": "2026-04-03T10:00:00Z"
+  },
+  {
+    "source": "Auth",
+    "event": "Failed Login - Admin",
+    "severity": "High",
+    "timestamp": "2026-04-03T10:05:00Z"
+  }
+]
