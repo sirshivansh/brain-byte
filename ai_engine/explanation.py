@@ -48,3 +48,22 @@ def calculate_risk(parsed, timeline):
         level = "LOW"
 
     return risk, level
+def root_cause_analysis(timeline):
+    events = [step["event"] for step in timeline]
+
+    if "port_scan" in events and "login" in events:
+        return "The attack started with reconnaissance (port scanning), followed by brute-force login attempts."
+
+    if "login" in events and "data_export" in events:
+        return "The attacker gained access using valid credentials and performed data exfiltration."
+
+    return "No clear root cause identified."
+
+
+def summarize_attack(timeline):
+    events = [step["event"] for step in timeline]
+
+    if "port_scan" in events and "data_export" in events:
+        return "Multi-stage attack involving scanning, unauthorized access, and data exfiltration."
+
+    return "No significant attack detected."
