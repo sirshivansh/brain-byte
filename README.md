@@ -10,3 +10,5 @@
 - Natural Language Querying over logs.
 - Multi-source event correlation.
 - Attack Timeline reconstruction.
+# brain-byte
+Hack The Core by Hackup
