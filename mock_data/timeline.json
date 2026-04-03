@@ -1,0 +1,71 @@
+const mockData = [
+  {
+    timestamp: "2026-04-03 14:05:12",
+    source: "firewall",
+    description: "Port scan detected on port 3389",
+    mitre: "T1190 - Exploit Public-Facing Application",
+    risk: "high",
+    ip: "192.168.1.45"
+  },
+  {
+    timestamp: "2026-04-03 14:07:33",
+    source: "auth",
+    description: "5 failed login attempts",
+    mitre: "T1110 - Brute Force",
+    risk: "critical",
+    ip: "192.168.1.45",
+    user: "admin"
+  },
+  {
+    timestamp: "2026-04-03 14:12:09",
+    source: "cloud",
+    description: "Successful login and data export (2.4GB)",
+    mitre: "T1020 - Automated Exfiltration",
+    risk: "critical",
+    ip: "192.168.1.45",
+    user: "admin"
+  },
+  {
+    timestamp: "2026-04-03 14:20:45",
+    source: "firewall",
+    description: "Multiple connection attempts blocked",
+    mitre: "T1046 - Network Service Discovery",
+    risk: "medium",
+    ip: "10.0.0.23"
+  },
+  {
+    timestamp: "2026-04-03 14:25:10",
+    source: "auth",
+    description: "Successful login from new location",
+    mitre: "T1078 - Valid Accounts",
+    risk: "high",
+    ip: "172.16.0.12",
+    user: "guest"
+  },
+  {
+    timestamp: "2026-04-03 14:30:55",
+    source: "cloud",
+    description: "Suspicious file upload detected",
+    mitre: "T1105 - Ingress Tool Transfer",
+    risk: "high",
+    ip: "192.168.1.99",
+    user: "dev_user"
+  },
+  {
+    timestamp: "2026-04-03 14:35:22",
+    source: "firewall",
+    description: "Blocked traffic from blacklisted IP",
+    mitre: "T1562 - Impair Defenses",
+    risk: "critical",
+    ip: "203.0.113.5"
+  },
+  {
+    timestamp: "2026-04-03 14:40:18",
+    source: "auth",
+    description: "Password changed successfully",
+    mitre: "T1098 - Account Manipulation",
+    risk: "medium",
+    ip: "192.168.1.45",
+    user: "admin"
+  }
+];
