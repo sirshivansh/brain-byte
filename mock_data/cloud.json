@@ -1,9 +1,20 @@
 [
   {
-    "timestamp": 3,
+    "timestamp": "2026-04-03 14:15:00",
+    "source": "cloud",
     "event_type": "data_export",
-    "user": "rishabh",
-    "ip": "192.168.1.10",
+    "status": "success",
+    "ip": "192.168.1.45",
+    "user": "admin",
     "technique": "Exfiltration Over Web (T1567)"
+  },
+  {
+    "timestamp": "2026-04-03 14:30:55",
+    "source": "cloud",
+    "event_type": "file_upload",
+    "status": "success",
+    "ip": "192.168.1.99",
+    "user": "dev_user",
+    "technique": "Ingress Tool Transfer (T1105)"
   }
 ]

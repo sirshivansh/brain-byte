@@ -1,9 +1,20 @@
 [
   {
-    "timestamp": 0,
+    "timestamp": "2026-04-03 14:05:12",
+    "source": "firewall",
     "event_type": "port_scan",
-    "ip": "192.168.1.10",
-    "location": "India",
+    "status": "blocked",
+    "ip": "192.168.1.45",
+    "user": "",
     "technique": "Network Scanning (T1046)"
+  },
+  {
+    "timestamp": "2026-04-03 14:35:22",
+    "source": "firewall",
+    "event_type": "blocked_traffic",
+    "status": "blocked",
+    "ip": "203.0.113.5",
+    "user": "",
+    "technique": "Impair Defenses (T1562)"
   }
 ]

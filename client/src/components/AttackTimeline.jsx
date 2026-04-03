@@ -3,11 +3,12 @@ import { VerticalTimeline, VerticalTimelineElement } from 'react-vertical-timeli
 import 'react-vertical-timeline-component/style.min.css';
 import { FaShieldAlt, FaExclamationTriangle, FaBan, FaKey } from 'react-icons/fa';
 
-const AttackTimeline = ({ events }) => {
+const AttackTimeline = ({ events, onAction }) => {
   const getIcon = (risk) => {
     if (risk === 'critical') return <FaExclamationTriangle className="text-red-500" />;
-    if (risk === 'high') return <FaShieldAlt className="text-orange-500" />;
-    return <FaShieldAlt className="text-cyan-400" />;
+    if (risk === 'high') return <FaExclamationTriangle className="text-orange-500" />;
+    if (risk === 'medium') return <FaShieldAlt className="text-yellow-400" />;
+    return <FaShieldAlt className="text-gray-400" />; // Low / Default
   };
 
   return (
@@ -24,7 +25,10 @@ const AttackTimeline = ({ events }) => {
             dateClassName="text-cyan-300 font-mono text-sm"
             icon={getIcon(event.risk)}
             iconStyle={{
-              background: event.risk === 'critical' ? '#ef4444' : '#06b67f',
+              // 🟢 EXACT COLOR MATCHING FOR ALL RISKS:
+              background: event.risk === 'critical' ? '#ef4444' : 
+                          event.risk === 'high' ? '#f97316' : 
+                          event.risk === 'medium' ? '#eab308' : '#6b7280',
               color: '#fff',
               boxShadow: '0 0 0 4px #22d3ee',
             }}
@@ -45,16 +49,17 @@ const AttackTimeline = ({ events }) => {
                 {event.user && <p className="text-gray-400 text-sm">User: {event.user}</p>}
               </div>
 
-              {(event.risk === 'high' || event.risk === 'critical') && (
+              {/* 🟢 Show action buttons for Critical, High, and Medium risks */}
+              {(event.risk === 'high' || event.risk === 'critical' || event.risk === 'medium') && (
                 <div className="flex flex-col gap-3 ml-8">
                   <button
-                    onClick={() => alert(`🚫 Blocked IP: ${event.ip}`)}
+                    onClick={() => onAction("IP Blocked", event.ip)}
                     className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-6 py-3 rounded-2xl text-white text-sm font-medium"
                   >
                     <FaBan /> Block IP
                   </button>
                   <button
-                    onClick={() => alert(`🔑 Forced reset for ${event.user}`)}
+                    onClick={() => onAction("Password Reset", event.user)}
                     className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 px-6 py-3 rounded-2xl text-white text-sm font-medium"
                   >
                     <FaKey /> Force Reset

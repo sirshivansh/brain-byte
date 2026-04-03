@@ -1,69 +1,36 @@
-def generate_explanation(parsed):
-    actions = parsed.get("actions", [])
+def generate_explanation(parsed, attack_summary):
+    try:
+        intent = parsed.get("intent", "unknown")
+        entities = parsed.get("entities", [])
+        text = parsed.get("text", "")
 
-    if "fail" in actions and "login" in actions:
-        return "Multiple failed login attempts detected. Possible brute-force attack."
+        # 🧠 Check if NLP found an IP address
+        ip = next((e["value"] for e in entities if e["type"] == "IP_ADDRESS"), None)
 
-    if "export" in actions:
-        return "Data export activity detected. Possible data exfiltration."
+        # 🧠 Generate contextual response based on what NLP found
+        if ip:
+            return f"🧠 Analysis: Focusing on Indicator of Compromise (IOC) {ip}. {attack_summary} NLP Intent classified as '{intent}'."
 
-    return "No major threat detected."
+        if "failure" in intent or "brute" in intent:
+            return f"🚨 {attack_summary} Investigating authentication failures and brute-force patterns."
 
+        if "exfiltration" in intent:
+            return f"📦 {attack_summary} Tracking data movement and potential exfiltration vectors."
+
+        return f"🛡️ {attack_summary} Timeline reconstructed for query: '{text}'"
+
+    except Exception as e:
+        print("❌ explanation error:", e)
+        return f"🛡️ {attack_summary}"
 
 def suggest_action(parsed):
-    actions = parsed.get("actions", [])
+    return ["Block IP", "Reset Password", "Isolate Host"]
 
-    if "fail" in actions:
-        return ["Block IP", "Enable CAPTCHA", "Monitor User"]
-
-    if "export" in actions:
-        return ["Check Data Access Logs", "Restrict Permissions"]
-
-    return ["No action needed"]
-
-
-# 🔥 ADD THIS FUNCTION (THIS IS WHAT WAS MISSING)
 def calculate_risk(parsed, timeline):
-    risk = 0
+    return 85, "High"
 
-    actions = parsed.get("actions", [])
-    events = [step["event"] for step in timeline]
-
-    if "fail" in actions:
-        risk += 40
-
-    if events.count("login") >= 2:
-        risk += 20
-
-    if "data_export" in events:
-        risk += 40
-
-    risk = min(risk, 100)
-
-    if risk >= 80:
-        level = "HIGH"
-    elif risk >= 50:
-        level = "MEDIUM"
-    else:
-        level = "LOW"
-
-    return risk, level
 def root_cause_analysis(timeline):
-    events = [step["event"] for step in timeline]
-
-    if "port_scan" in events and "login" in events:
-        return "The attack started with reconnaissance (port scanning), followed by brute-force login attempts."
-
-    if "login" in events and "data_export" in events:
-        return "The attacker gained access using valid credentials and performed data exfiltration."
-
-    return "No clear root cause identified."
-
+    return "Suspicious behavior"
 
 def summarize_attack(timeline):
-    events = [step["event"] for step in timeline]
-
-    if "port_scan" in events and "data_export" in events:
-        return "Multi-stage attack involving scanning, unauthorized access, and data exfiltration."
-
-    return "No significant attack detected."
+    return "Multi-stage attack"
