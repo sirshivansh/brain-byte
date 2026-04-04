@@ -52,7 +52,7 @@ def process_query():
         print("🔥 PARSED:", parsed)
 
         # 🔥 LIVE DATA: Generate fresh fluctuating logs on every query
-        logs = get_live_logs(count=8)
+        logs = get_live_logs(count=8, target_ip=target_ip)
         
         # 🧠 HACKATHON FLEX: Filter logs based on NLP extracted entities (e.g., IP address)
         entities = parsed.get("entities", [])
@@ -96,12 +96,17 @@ def process_query():
             })
         else:
             # React Frontend expects this format
-            return jsonify({
+            final_response = {
                 "status": "success",
                 "response": explanation,
-                "timeline": timeline,  # ✅ FIX: Sending timeline to React!
+                "timeline": timeline,  
                 "risk_score": risk_score
-            })
+            }
+            
+            # 🚨 DEBUG PRINT: Force print what we are sending to React
+            print("🔍 SENDING TO REACT:", final_response["response"][:100])
+            
+            return jsonify(final_response)
 
     except Exception as e:
         print("❌ SERVER ERROR:", e)

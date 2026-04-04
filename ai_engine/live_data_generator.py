@@ -53,11 +53,11 @@ def get_random_user():
     users = ["admin", "root", "jdoe", "dev_user", "guest_user", "svc_backup", "analyst_1"]
     return random.choice(users)
 
-def get_live_logs(count=8):
+def get_live_logs(count=8, target_ip=None):
     logs = []
     
     # Pick a random "Attacker IP" to create a cohesive attack chain
-    attacker_ip = get_random_ip()
+    attacker_ip = target_ip if target_ip else get_random_ip(is_internal=False)
     
     # Generate timestamps going back from right now
     now = datetime.now()
