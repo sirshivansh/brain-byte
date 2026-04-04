@@ -6,26 +6,27 @@ def calculate_cvss_and_epss(event_type, status, prev_event_type):
     # Base CVSS Scores based on MITRE mapping
     if event_type == "port_scan" or event_type == "blocked_traffic":
         cvss = 5.3
-        epss = 62.4
+        epss = 0.624
     elif event_type == "login" and status == "failed":
         cvss = 7.5
-        epss = 85.2
+        epss = 0.852
     elif event_type == "login" and status == "success":
         # If it follows a failed login (Credential Access), CVSS skyrockets
         if prev_event_type == "login": 
             cvss = 9.1
-            epss = 94.8
+            epss = 0.948
         else:
             cvss = 3.7
-            epss = 22.1
+            epss = 0.221
     elif event_type == "data_export":
         cvss = 9.8
-        epss = 97.5
+        epss = 0.975
     elif event_type == "file_upload":
         cvss = 8.6
-        epss = 88.1
+        epss = 0.881
         
-    return round(cvss, 1), f"{round(epss, 1)}%"
+    # ✅ FIX: Return raw numbers so React can do math (epss * 100)
+    return round(cvss, 1), round(epss, 3)
 
 
 def build_timeline(logs):

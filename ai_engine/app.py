@@ -11,7 +11,7 @@ from explanation import (
     root_cause_analysis,
     summarize_attack
 )
-from data_loader import load_logs
+from live_data_generator import get_live_logs
 
 app = Flask(__name__)
 CORS(app)
@@ -51,8 +51,8 @@ def process_query():
 
         print("🔥 PARSED:", parsed)
 
-        # ✅ FIX: Don't drop logs! Use ALL logs for the timeline
-        logs = load_logs()
+        # 🔥 LIVE DATA: Generate fresh fluctuating logs on every query
+        logs = get_live_logs(count=8)
         
         # 🧠 HACKATHON FLEX: Filter logs based on NLP extracted entities (e.g., IP address)
         entities = parsed.get("entities", [])
@@ -74,7 +74,7 @@ def process_query():
 
         # 🧠 Generate smart explanation using NLP data
         try:
-            explanation = generate_explanation(parsed, attack) # <-- Uses it here
+            explanation = generate_explanation(parsed, attack, timeline) # <-- Uses it here
         except Exception as e:
             print("EXPLANATION ERROR:", e)
             explanation = f"🛡️ {attack}"

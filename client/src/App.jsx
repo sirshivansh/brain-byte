@@ -47,28 +47,42 @@ export default function App() {
   const [inputFocused, setInputFocused]     = useState(false);
   const aiPanelRef = useRef(null);
 
-  /* ── sample data ── */
+  /* ── 🌊 LIVE DATABASE STREAM (Replaces old mock data) ── */
   useEffect(() => {
-    const raw = [
-      { timestamp: "2026-04-03 14:05:12", source: "firewall", description: "Port scan detected on port 3389", mitre: "T1190 - Exploit Public-Facing Application", risk: "high",     ip: "192.168.1.45" },
-      { timestamp: "2026-04-03 14:07:33", source: "auth",     description: "5 failed login attempts",          mitre: "T1110 - Brute Force",                      risk: "critical", ip: "192.168.1.45", user: "admin" },
-      { timestamp: "2026-04-03 14:12:09", source: "cloud",    description: "Successful login + data export",   mitre: "T1020 - Automated Exfiltration",           risk: "critical", ip: "192.168.1.45", user: "admin" },
-    ];
-    setTimelineEvents(raw.map(e => ({ ...e, cvss: getCVSS(e.risk), epss: getEPSS(e.risk), mitre: enrichMITRE(e.mitre) })));
+    const fetchLiveTimeline = async () => {
+      try {
+        const res = await fetch("/api/timeline");
+        const data = await res.json();
+        
+        if (data.timeline) {
+          // Map Node.js DB data to match React UI expectations
+          const formatted = data.timeline.map(log => ({
+            timestamp: log.timestamp,
+            source: log.source,
+            description: log.event, // Node.js saves the raw text here
+            mitre: log.mitre_attack, // String format from DB
+            risk: log.severity ? log.severity.toLowerCase() : "low",
+            cvss: log.risk_score || 5.0, // Fallback if AI didn't score it
+            epss: 0.75, // Fallback for DB logs
+            ip: log.ip_address,
+            user: ""
+          }));
+          setTimelineEvents(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to fetch live timeline", err);
+      }
+    };
+
+    // Fetch immediately
+    fetchLiveTimeline();
+    
+    // Then fetch every 4 seconds automatically!
+    const interval = setInterval(fetchLiveTimeline, 4000);
+
+    return () => clearInterval(interval);
   }, []);
-
-  /* ── typing effect ── */
-  useEffect(() => {
-    if (!aiResponse) { setDisplayedResponse(""); return; }
-    let i = 0;
-    const t = setInterval(() => {
-      setDisplayedResponse(aiResponse.substring(0, i + 1));
-      i++;
-      if (i >= aiResponse.length) clearInterval(t);
-    }, 15);
-    return () => clearInterval(t);
-  }, [aiResponse]);
-
+  
   /* ── scroll ai panel on new text ── */
   useEffect(() => {
     if (aiPanelRef.current) aiPanelRef.current.scrollTop = aiPanelRef.current.scrollHeight;

@@ -44,21 +44,14 @@ const AttackTimeline = ({ events, onAction }) => {
                 </span>
                 <h4 className="text-white text-xl font-semibold mt-4">{event.description}</h4>
                 
+                {/* RISK BADGE ONLY */}
                 <div className="flex items-center gap-3 mt-2 text-xs">
                   <span className="bg-gray-800 px-2 py-1 rounded font-mono text-white">
                     {event.risk.toUpperCase()}
                   </span>
-
-                  <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded">
-                    CVSS {event.cvss?.toFixed(1)}
-                  </span>
-
-                  <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded">
-                    EPSS {(event.epss * 100).toFixed(0)}%
-                  </span>
                 </div>
 
-                {/* 🧠 ENTERPRISE METRICS (CVSS + EPSS) */}
+                {/* 🧠 ENTERPRISE METRICS (CVSS + EPSS) - THE PRETTY ONES */}
                 <div className="flex items-center gap-4 mt-3">
                   <div className={`px-3 py-1 rounded-lg text-xs font-bold ${
                     event.cvss >= 9 ? "bg-red-500/20 text-red-400 border border-red-500/50" : 
@@ -77,6 +70,7 @@ const AttackTimeline = ({ events, onAction }) => {
                   </div>
                 </div>
 
+                {/* DEEP MITRE MAPPING */}
                 <div className="mt-3 text-sm">
                   {typeof event.mitre === "object" ? (
                     <div className="text-purple-400 font-mono">
