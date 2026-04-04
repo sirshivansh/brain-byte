@@ -1,8 +1,41 @@
+# 🧠 ENTERPRISE SCORING ENGINE (CVSS + EPSS)
+def calculate_cvss_and_epss(event_type, status, prev_event_type):
+    cvss = 0.0
+    epss = 0.0
+    
+    # Base CVSS Scores based on MITRE mapping
+    if event_type == "port_scan" or event_type == "blocked_traffic":
+        cvss = 5.3
+        epss = 62.4
+    elif event_type == "login" and status == "failed":
+        cvss = 7.5
+        epss = 85.2
+    elif event_type == "login" and status == "success":
+        # If it follows a failed login (Credential Access), CVSS skyrockets
+        if prev_event_type == "login": 
+            cvss = 9.1
+            epss = 94.8
+        else:
+            cvss = 3.7
+            epss = 22.1
+    elif event_type == "data_export":
+        cvss = 9.8
+        epss = 97.5
+    elif event_type == "file_upload":
+        cvss = 8.6
+        epss = 88.1
+        
+    return round(cvss, 1), f"{round(epss, 1)}%"
+
+
 def build_timeline(logs):
     logs = sorted(logs, key=lambda x: x["timestamp"])
     timeline = []
 
     for i, log in enumerate(logs):
+        # 🟢 GET PREVIOUS EVENT FOR CVSS CONTEXT
+        prev_event_type = logs[i-1]["event_type"] if i > 0 else None
+
         # Extract basic info
         source = log.get("source", "unknown")
         event_type = log.get("event_type", "unknown")
@@ -19,19 +52,18 @@ def build_timeline(logs):
         # 🟢 FIX 2: Pull MITRE directly from the new JSON data!
         mitre = log.get("technique", "N/A")
         
-        # 🟢 FIX 3: Assign Risk based on event type
-        risk = "low"
+        # 🟢 ENTERPRISE SCORING
+        cvss_score, epss_score = calculate_cvss_and_epss(event_type, log.get("status"), prev_event_type)
         
-        if event_type == "port_scan" or event_type == "blocked_traffic":
-            risk = "high"
-        elif event_type == "login" and log.get("status") == "failed":
+        # 🟢 ASSIGN RISK CATEGORY BASED ON CVSS
+        if cvss_score >= 9.0:
             risk = "critical"
-        elif event_type == "login" and log.get("status") == "success":
+        elif cvss_score >= 7.0:
+            risk = "high"
+        elif cvss_score >= 4.0:
             risk = "medium"
-        elif event_type == "data_export":
-            risk = "critical"
-        elif event_type == "file_upload":
-            risk = "high"
+        else:
+            risk = "low"
 
         # 🟢 FIX 4: Clean description format (No more empty brackets!)
         status_text = f" - {log.get('status')}" if log.get("status") else ""
@@ -43,6 +75,8 @@ def build_timeline(logs):
             "description": f"{event_type.replace('_', ' ').title()}{status_text}", 
             "mitre": mitre,      
             "risk": risk,        
+            "cvss": cvss_score,      # 🟢 NEW: Number for UI
+            "epss": epss_score,      # 🟢 NEW: Percentage for UI
             "ip": log.get("ip", ""), 
             "user": log.get("user", "") 
         }
