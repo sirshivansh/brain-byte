@@ -6,7 +6,12 @@
     "status": "success",
     "ip": "192.168.1.45",
     "user": "admin",
-    "technique": "Exfiltration Over Web (T1567)"
+    "technique": {
+      "tactic": "Exfiltration",
+      "technique": "T1567",
+      "subtechnique": "T1567.001",
+      "name": "Exfiltration Over Web Service"
+    }
   },
   {
     "timestamp": "2026-04-03 14:30:55",
@@ -15,6 +20,11 @@
     "status": "success",
     "ip": "192.168.1.99",
     "user": "dev_user",
-    "technique": "Ingress Tool Transfer (T1105)"
+    "technique": {
+      "tactic": "Command and Control",
+      "technique": "T1105",
+      "subtechnique": "T1105.002",
+      "name": "Software Deployment Tools"
+    }
   }
 ]

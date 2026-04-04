@@ -6,7 +6,12 @@
     "status": "blocked",
     "ip": "192.168.1.45",
     "user": "",
-    "technique": "Network Scanning (T1046)"
+    "technique": {
+      "tactic": "Discovery",
+      "technique": "T1046",
+      "subtechnique": "T1046.001",
+      "name": "Network Service Scanning"
+    }
   },
   {
     "timestamp": "2026-04-03 14:35:22",
@@ -15,6 +20,11 @@
     "status": "blocked",
     "ip": "203.0.113.5",
     "user": "",
-    "technique": "Impair Defenses (T1562)"
+    "technique": {
+      "tactic": "Defense Evasion",
+      "technique": "T1562",
+      "subtechnique": "T1562.001",
+      "name": "Disable or Modify Tools"
+    }
   }
 ]
