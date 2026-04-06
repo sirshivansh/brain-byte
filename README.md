@@ -1,4 +1,5 @@
 # 🛡️ SecureAI: The SOC Analyst's Co-Pilot
+![SecureAI Dashboard Demo](./demoPic.png)
 > **Stop hunting through logs. Start investigating threats with AI.**
 
 SecureAI is a high-speed Security Operations Center (SOC) dashboard that uses a **Python AI Engine** to narrate security events in plain English. It correlates fragmented logs from firewalls, servers, and cloud apps into a single, cohesive attack story.
