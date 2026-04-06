@@ -38,16 +38,16 @@ const SCANLINES = `repeating-linear-gradient(
 
 export default function App() {
   const [timelineEvents, setTimelineEvents] = useState([]);
-  const [query, setQuery]                   = useState("");
-  const [aiResponse, setAiResponse]         = useState("");
-  const [toast, setToast]                   = useState(null);
-  const [displayedResponse, setDisplayedResponse] = useState("");
-  const [isLoading, setIsLoading]           = useState(false);
-  const [activeFilter, setActiveFilter]     = useState("all");
-  const [inputFocused, setInputFocused]     = useState(false);
+  const [query, setQuery] = useState("");
+  const [aiResponse, setAiResponse] = useState(""); 
+  const [displayedResponse, setDisplayedResponse] = useState(""); 
+  const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [inputFocused, setInputFocused] = useState(false);
   const aiPanelRef = useRef(null);
 
-  /* ── 🌊 LIVE DATABASE STREAM (Replaces old mock data) ── */
+/* ── 🌊 LIVE DATABASE STREAM ── */
   useEffect(() => {
     const fetchLiveTimeline = async () => {
       try {
@@ -55,15 +55,14 @@ export default function App() {
         const data = await res.json();
         
         if (data.timeline) {
-          // Map Node.js DB data to match React UI expectations
           const formatted = data.timeline.map(log => ({
             timestamp: log.timestamp,
             source: log.source,
-            description: log.event, // Node.js saves the raw text here
-            mitre: log.mitre_attack, // String format from DB
+            description: log.event, 
+            mitre: log.mitre_attack, 
             risk: log.severity ? log.severity.toLowerCase() : "low",
-            cvss: log.risk_score || 5.0, // Fallback if AI didn't score it
-            epss: 0.75, // Fallback for DB logs
+            cvss: log.risk_score || 5.0, 
+            epss: 0.75, 
             ip: log.ip_address,
             user: ""
           }));
@@ -74,15 +73,18 @@ export default function App() {
       }
     };
 
-    // Fetch immediately
     fetchLiveTimeline();
-    
-    // Then fetch every 4 seconds automatically!
     const interval = setInterval(fetchLiveTimeline, 4000);
-
     return () => clearInterval(interval);
   }, []);
-  
+
+  /* ── 🛡️ FIX: Sync aiResponse to displayedResponse so it shows in the UI ── */
+  useEffect(() => {
+    if (aiResponse) {
+      setDisplayedResponse(aiResponse);
+    }
+  }, [aiResponse]);
+
   /* ── scroll ai panel on new text ── */
   useEffect(() => {
     if (aiPanelRef.current) aiPanelRef.current.scrollTop = aiPanelRef.current.scrollHeight;
@@ -92,12 +94,25 @@ export default function App() {
     if (!query.trim()) return;
     setIsLoading(true);
     setAiResponse("");
+    setDisplayedResponse(""); // Clear panel for new analysis
+    
     try {
-      const res  = await fetch("/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: query }) });
+      const res = await fetch("/ask", { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ message: query }) 
+      });
       const data = await res.json();
+      
       if (data.timeline) {
-        setTimelineEvents(data.timeline.map(e => ({ ...e, cvss: e.cvss ?? getCVSS(e.risk), epss: e.epss ?? getEPSS(e.risk), mitre: enrichMITRE(e.mitre) })));
+        setTimelineEvents(data.timeline.map(e => ({ 
+          ...e, 
+          cvss: e.cvss ?? getCVSS(e.risk), 
+          epss: e.epss ?? getEPSS(e.risk), 
+          mitre: enrichMITRE(e.mitre) 
+        })));
       }
+      
       setAiResponse(data.response || data.message || "");
       setQuery("");
     } catch {

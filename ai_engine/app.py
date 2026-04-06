@@ -2,111 +2,88 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from nlp_engine import parse_query
-from query_builder import build_query
-from timeline import build_timeline, detect_attack, correlate_logs, detect_suspicious_ip
+from timeline import build_timeline, detect_attack
 from explanation import (
     generate_explanation,
     suggest_action,
-    calculate_risk,
-    root_cause_analysis,
-    summarize_attack
+    calculate_risk
 )
 from live_data_generator import get_live_logs
 
 app = Flask(__name__)
 CORS(app)
 
-# ✅ FIX: Support both React (/ask) and Node.js (/analyze) endpoints
 @app.route("/ask", methods=["POST"])
 @app.route("/analyze", methods=["POST"])
 def process_query():
     try:
         data = request.get_json()
         
-        # ✅ FIX: Handle both React ('message') and Node ('text') payloads
+        # ✅ Support both React ('message') and Node ('text') keys
         user_query = data.get("message") or data.get("text") if data else None
+        
+        # ✅ Capture the history context from the Node.js server
+        history = data.get("history_context", "")
 
         print("🔥 USER QUERY:", user_query)
 
         if not user_query:
             return jsonify({"status": "error", "message": "No query"}), 400
 
+        # 1. Parse the query first
         parsed = parse_query(user_query)
         
-        # 🛑 AI SAFETY NET: Reject Injection and Hallucination attempts immediately
+        # 🛑 AI SAFETY NET
         if parsed.get("intent") in ["injection_attempt", "out_of_domain"]:
             return jsonify({
                 "status": "success",
-                "response": "🛑 Security Policy: As an AI SOC Co-Pilot, I am strictly restricted to analyzing security logs. I cannot process general queries, jokes, or system prompt instructions to prevent hallucination and prompt injection attacks.",
+                "response": "🛑 Security Policy: Restricted to security log analysis.",
                 "timeline": []
             })
-        
 
-        if not parsed:
-            parsed = {
-                "intent": "unknown",
-                "entities": [],
-                "query": user_query
-            }
-
-        print("🔥 PARSED:", parsed)
-
-        # 🔥 LIVE DATA: Generate fresh fluctuating logs on every query
-        logs = get_live_logs(count=8, target_ip=target_ip)
-        
-        # 🧠 HACKATHON FLEX: Filter logs based on NLP extracted entities (e.g., IP address)
+        # 2. 🛡️ THE FIX: Define target_ip FIRST from the parsed results
         entities = parsed.get("entities", [])
         target_ip = next((e["value"] for e in entities if e["type"] == "IP_ADDRESS"), None)
+
+        print(f"🔍 TARGET IP IDENTIFIED: {target_ip}")
+
+        # 3. 🧠 NOW generate live data safely using that specific IP
+        logs = get_live_logs(count=8, target_ip=target_ip)
         
-        if target_ip:
-            print(f"🔍 FILTERING LOGS FOR IP: {target_ip}")
-            logs = [log for log in logs if log.get("ip") == target_ip]
-            
-            if not logs:
-                return jsonify({
-                    "status": "success",
-                    "response": f"No malicious activity found for IP {target_ip} in the current dataset.",
-                    "timeline": []
-                })
+        timeline = build_timeline(logs)
+        attack = detect_attack(timeline)
 
-        timeline = build_timeline(logs)     # <-- Creates timeline
-        attack = detect_attack(timeline)   # <-- 🟢 CREATES THE 'attack' VARIABLE!
-
-        # 🧠 Generate smart explanation using NLP data
+        # 4. Generate the explanation
         try:
-            explanation = generate_explanation(parsed, attack, timeline) # <-- Uses it here
+            explanation = generate_explanation(parsed, attack, timeline)
+            # Combine the database history with the AI explanation
+            if history:
+                explanation = f"{history}\n\n{explanation}"
         except Exception as e:
-            print("EXPLANATION ERROR:", e)
+            print("❌ EXPLANATION ERROR:", e)
             explanation = f"🛡️ {attack}"
             
         actions = suggest_action(parsed)
         
-        # Calculate risk so we can pass it to Node.js
+        # 5. Calculate risk
         try:
             risk_score, risk_level = calculate_risk(parsed, timeline)
         except:
-            risk_score, risk_level = 75, "High" # Fallback
+            risk_score, risk_level = 75, "High"
 
-        # ✅ FIX: Return different data depending on who called the API
+        # ✅ Return the correct format depending on which server called this
         if "/analyze" in request.path:
-            # Node.js Server expects this exact format
             return jsonify({
                 "risk_score": risk_score,
                 "suggestion": ", ".join(actions)
             })
         else:
-            # React Frontend expects this format
-            final_response = {
+            return jsonify({
                 "status": "success",
                 "response": explanation,
                 "timeline": timeline,  
                 "risk_score": risk_score
-            }
-            
-            # 🚨 DEBUG PRINT: Force print what we are sending to React
-            print("🔍 SENDING TO REACT:", final_response["response"][:100])
-            
-            return jsonify(final_response)
+            })
 
     except Exception as e:
         print("❌ SERVER ERROR:", e)
@@ -115,6 +92,6 @@ def process_query():
             "message": str(e)
         }), 500
 
-
 if __name__ == "__main__":
+    # Ensure it runs on Port 5001 to match your Node.js and React settings
     app.run(debug=True, port=5001)
