@@ -46,81 +46,95 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [inputFocused, setInputFocused] = useState(false);
   const aiPanelRef = useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+/* ── 🛡️ STATE SYNCHRONIZATION ── */
+// This effect ensures that as soon as the AI sends a response, 
+// it appears in the Investigation Panel.
+useEffect(() => {
+  if (aiResponse) {
+    setDisplayedResponse(aiResponse);
+  }
+}, [aiResponse]);
 
 /* ── 🌊 LIVE DATABASE STREAM ── */
-  useEffect(() => {
-    const fetchLiveTimeline = async () => {
-      try {
-        const res = await fetch("/api/timeline");
-        const data = await res.json();
-        
-        if (data.timeline) {
-          const formatted = data.timeline.map(log => ({
-            timestamp: log.timestamp,
-            source: log.source,
-            description: log.event, 
-            mitre: log.mitre_attack, 
-            risk: log.severity ? log.severity.toLowerCase() : "low",
-            cvss: log.risk_score || 5.0, 
-            epss: 0.75, 
-            ip: log.ip_address,
-            user: ""
-          }));
-          setTimelineEvents(formatted);
-        }
-      } catch (err) {
-        console.error("Failed to fetch live timeline", err);
-      }
-    };
+useEffect(() => {
+  const fetchLiveTimeline = async () => {
+    // 🛡️ STOP fetching if we are in "Investigation Mode"
+    if (isPaused) return;
 
-    fetchLiveTimeline();
-    const interval = setInterval(fetchLiveTimeline, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  /* ── 🛡️ FIX: Sync aiResponse to displayedResponse so it shows in the UI ── */
-  useEffect(() => {
-    if (aiResponse) {
-      setDisplayedResponse(aiResponse);
-    }
-  }, [aiResponse]);
-
-  /* ── scroll ai panel on new text ── */
-  useEffect(() => {
-    if (aiPanelRef.current) aiPanelRef.current.scrollTop = aiPanelRef.current.scrollHeight;
-  }, [displayedResponse]);
-
-  const handleAskSecureAI = async () => {
-    if (!query.trim()) return;
-    setIsLoading(true);
-    setAiResponse("");
-    setDisplayedResponse(""); // Clear panel for new analysis
-    
     try {
-      const res = await fetch("/ask", { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ message: query }) 
-      });
+      const res = await fetch("/api/timeline");
       const data = await res.json();
       
       if (data.timeline) {
-        setTimelineEvents(data.timeline.map(e => ({ 
-          ...e, 
-          cvss: e.cvss ?? getCVSS(e.risk), 
-          epss: e.epss ?? getEPSS(e.risk), 
-          mitre: enrichMITRE(e.mitre) 
-        })));
+        const formatted = data.timeline.map(log => ({
+          timestamp: log.timestamp,
+          source: log.source,
+          description: log.event, 
+          mitre: log.mitre_attack, 
+          risk: log.severity ? log.severity.toLowerCase() : "low",
+          cvss: log.risk_score || 5.0, 
+          epss: 0.75, 
+          ip: log.ip_address,
+          user: ""
+        }));
+        setTimelineEvents(formatted);
       }
-      
-      setAiResponse(data.response || data.message || "");
-      setQuery("");
-    } catch {
-      setAiResponse("⚠️ Server error. Is backend running?");
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      console.error("Failed to fetch live timeline", err);
     }
   };
+
+  fetchLiveTimeline();
+  const interval = setInterval(fetchLiveTimeline, 4000);
+  
+  // Cleanup interval on unmount or when isPaused changes
+  return () => clearInterval(interval);
+}, [isPaused]); 
+
+/* ── 🧠 AI INVESTIGATION HANDLER ── */
+const handleAskSecureAI = async () => {
+  if (!query.trim()) return;
+  
+  setIsLoading(true);
+  setIsPaused(true);       // 1. Freeze the live feed so logs don't jump around
+  setAiResponse("");       // 2. Reset the internal state
+  setDisplayedResponse(""); // 3. Clear the UI panel immediately
+  
+  try {
+    const res = await fetch("/ask", { 
+      method: "POST", 
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ message: query }) 
+    });
+    
+    if (!res.ok) throw new Error("Server unrechable");
+    
+    const data = await res.json();
+    
+    // Update the timeline with AI-filtered events
+    if (data.timeline && data.timeline.length > 0) {
+      setTimelineEvents(data.timeline.map(e => ({ 
+        ...e, 
+        cvss: e.cvss ?? getCVSS(e.risk), 
+        epss: e.epss ?? getEPSS(e.risk), 
+        mitre: enrichMITRE(e.mitre) 
+      })));
+    }
+    
+    // Set the response - the useEffect above will handle showing it
+    const finalMessage = data.response || data.message || "Analysis complete. No critical threats found.";
+    setAiResponse(finalMessage);
+    setQuery("");
+
+  } catch (error) {
+    console.error("AI Error:", error);
+    setAiResponse("⚠️ AI Engine is offline. Please check if app.py is running on port 5001.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleAction = (actionType, details) => {
     setToast(`${actionType} executed for ${details}`);
@@ -327,8 +341,41 @@ export default function App() {
 
         {/* Event count pill */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          
+          {/* 🛡️ THE RESUME BUTTON */}
+          {isPaused && (
+            <button 
+              onClick={() => setIsPaused(false)}
+              style={{
+                background: "rgba(234,179,8,0.15)",
+                border: "1px solid #eab308",
+                color: "#eab308",
+                fontSize: "10px",
+                padding: "4px 12px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontWeight: "700",
+                marginRight: "10px",
+                letterSpacing: "0.05em",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={(e) => e.target.style.background = "rgba(234,179,8,0.25)"}
+              onMouseLeave={(e) => e.target.style.background = "rgba(234,179,8,0.15)"}
+            >
+              ▶ RESUME LIVE FEED
+            </button>
+          )}
+
           <span style={{ fontSize: 11, color: "#3d5566", letterSpacing: "0.06em" }}>EVENTS</span>
-          <span style={{ background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.25)", borderRadius: 20, padding: "2px 10px", fontSize: 12, fontWeight: 700, color: "#38bdf8" }}>
+          <span style={{ 
+            background: "rgba(56,189,248,0.12)", 
+            border: "1px solid rgba(56,189,248,0.25)", 
+            borderRadius: 20, 
+            padding: "2px 10px", 
+            fontSize: 12, 
+            fontWeight: 700, 
+            color: "#38bdf8" 
+          }}>
             {timelineEvents.length}
           </span>
         </div>
